@@ -3,7 +3,7 @@
 ## 🎯 기본 설정
 ```
 당신은 Local File Agent를 통해 로컬 프로젝트를 분석하고 수정하는 AI 에이전트입니다.
-Local File Agent는 http://localhost:4312에서 실행 중이며, 
+Local File Agent는 http://58.121.142.180:4312에서 실행 중이며, 
 모든 요청에 x-agent-token: 73025532 헤더가 필요합니다.
 
 프로젝트 경로: D:/home/8phone (설정된 루트 디렉토리)
@@ -76,16 +76,74 @@ GET /grep?q=useState&glob=src/**/*.{ts,tsx,js,jsx}&limit=50
 4. 패치 적용
 ```
 
-### 버그 수정 요청 예시
-```
-"src/utils/api.ts의 fetchUserData 함수에서 error handling이 누락되어 있습니다.
-try-catch로 감싸고 에러를 적절히 처리해주세요."
+## 💬 Cline 대화 예시
 
-처리 과정:
-1. 해당 파일 읽기
-2. 에러 발생 가능한 지점 식별
-3. 개선된 코드 작성
-4. 패치 적용
+### 예시 대화 1: 프로젝트 구조 파악
+**User**: "내 프로젝트를 분석해줘"
+
+**Cline 응답**:
+``` 
+로컬 프로젝트를 분석하기 위해 Local File Agent를 사용하겠습니다.
+
+1. 프로젝트 인덱스를 생성하겠습니다:
+POST http://localhost:4312/index
+Header: x-agent-token: 73025532
+
+2. 인덱스 요약 정보를 확인하겠습니다:
+GET http://localhost:4312/index/summary
+Header: x-agent-token: 73025532
+
+3. 주요 컴포넌트 파일들을 검색하겠습니다:
+GET http://localhost:4312/index/search?pathContains=component&limit=20
+Header: x-agent-token: 73025532
+
+분석 결과:
+- 프로젝트에는 551개의 TypeScript/React 파일이 있습니다.
+- 주요 컴포넌트 파일들을 식별했습니다.
+```
+
+### 예시 대화 2: 구체적인 수정 요청
+**User**: "Button 컴포넌트에 로딩 상태를 추가해줘"
+
+**Cline 응답**:
+``` 
+Button 컴포넌트를 찾아서 로딩 상태 기능을 추가하겠습니다.
+
+1. Button 컴포넌트가 있는 파일을 찾겠습니다:
+GET http://localhost:4312/index/search?exportName=Button
+
+2. 현재 코드를 분석하겠습니다:
+GET http://localhost:4312/file?path=src/components/Button.tsx
+
+3. 새로운 props와 로딩 로직을 추가한 patch를 작성하여 dryRun으로 테스트하겠습니다.
+```
+
+## 🔄 실제 요청 예시 (curl)
+
+### 프로젝트 인덱싱
+```bash
+curl -X POST http://localhost:4312/index -H "x-agent-token: 73025532"
+```
+
+### 코드에서 useState 검색
+```bash
+curl "http://localhost:4312/grep?q=useState&glob=src/**/*.{ts,tsx}&limit=20" -H "x-agent-token: 73025532"
+```
+
+### 파일 수정 (dry run)
+```bash
+curl -X POST http://localhost:4312/patch-batch \
+  -H "Content-Type: application/json" \
+  -H "x-agent-token: 73025532" \
+  -d '{
+    "dryRun": true,
+    "patches": [
+      {
+        "path": "src/App.tsx",
+        "patch": "--- a/src/App.tsx\n+++ b/src/App.tsx\n@@ -1,3 +1,4 @@\n import React from \"react\";\n+import \"./App.css\";\n \n function App() {"
+      }
+    ]
+  }'
 ```
 
 ## 📝 자주 사용되는 작업별 프롬프트
@@ -108,111 +166,27 @@ try-catch로 감싸고 에러를 적절히 처리해주세요."
 4. 패치 적용
 ```
 
-### 테스트 작성
-```
-"src/components/ 폴더의 모든 컴포넌트에 대한 단위 테스트를 작성해주세요."
-1. 컴포넌트 목록 수집 (/index/search?pathContains=src/components)
-2. 각 컴포넌트의 props와 로직 분석
-3. React Testing Library를 사용한 테스트 스켈레톤 생성
-4. 테스트 파일 생성 (/file)
-```
+## 🎯 Cline에서 효과적인 프롬프트 팁
 
-### 성능 최적화
-```
-"React 컴포넌트에서 불필요한 re-rendering을 방지해주세요.
-useMemo, useCallback을 적절히 사용하도록 수정해주세요."
-1. 컴포넌트 목록 수집
-2. 각 컴포넌트의 상태 관리 패턴 분석
-3. 최적화 적용 (/patch)
-```
-
-## 🔧 디버깅 및 문제 해결
-
-### 오류 분석
-```
-"프로젝트에서 빌드 오류가 발생합니다. 오류 원인을 찾아서 수정해주세요."
-1. /run 엔드포인트로 npm run build 실행
-2. stderr 출력 분석
-3. 오류 지점 파일 수정
-4. 재빌드로 확인
-```
-
-### 로그 분석
-```
-"애플리케이션에서 특정 오류가 발생합니다. 관련 코드를 찾아서 수정해주세요."
-1. 오류 메시지로 /grep 검색
-2. 관련 파일들의 로직 분석
-3. 수정사항 적용
-4. 테스트로 검증
-```
-
-## 🎨 UI/UX 개선
-
-### 스타일 일관성
-```
-"모든 컴포넌트에서 일관된 스타일링을 사용하도록 수정해주세요.
-CSS 변수나 Tailwind 클래스를 활용해주세요."
-1. 기존 스타일 패턴 분석
-2. 공통 스타일 가이드 정의
-3. 각 컴포넌트 수정
-4. 일괄 적용
-```
-
-### 접근성 개선
-```
-"모든 컴포넌트에 proper ARIA attributes와 keyboard navigation을 추가해주세요."
-1. 컴포넌트 목록 수집
-2. 접근성 이슈 진단
-3. 개선사항 적용
-```
-
-## 📊 코드 분석 및 리포팅
-
-### 코드 품질 리포트
-```
-"현재 프로젝트의 코드 품질을 분석하고 개선점을 제시해주세요."
-1. 전체 인덱스 생성
-2. 파일 크기, 복잡도, 타입 사용률 등 분석
-3. 개선 우선순위 제안
-4. 구체적인 수정 방안 제시
-```
-
-### 의존성 분석
-```
-"사용되지 않는 의존성을 찾아서 package.json에서 제거해주세요."
-1. /grep으로 각 의존성의 실제 사용 여부 확인
-2. 사용하지 않는 항목 식별
-3. package.json 수정 (/file로 업데이트)
-```
-
-## 💡 고급 활용 예시
-
-### 자동화 스크립트 생성
-```
-"개발 워크플로우를 자동화하는 스크립트를 작성해주세요.
-git hooks, npm scripts, 또는 CI/CD 설정을 포함해주세요."
-1. 현재 개발 프로세스 분석
-2. 자동화 가능한 작업 식별
-3. 스크립트 작성 (/file)
-4. 설정 파일 업데이트
-```
-
-### 다국어 지원 추가
-```
-"애플리케이션에 i18n 지원을 추가하고, 모든 텍스트를 다국어로 번역해주세요."
-1. 텍스트 문자열 수집 (/grep)
-2. i18n 설정 파일 생성
-3. 각 파일에서 다국어 적용
-4. 번역 파일 생성
-```
+1. **명확한 작업 지시**: 구체적으로 어떤 파일을 수정하고 싶은지 명시하세요.
+2. **단계별 진행**: 복잡한 작업은 여러 단계(분석 -> 전략 수립 -> 수정 -> 검증)로 나누어 요청하세요.
+3. **dry run 우선**: 실제 적용 전에 항상 `/patch-batch`에서 `dryRun: true`로 테스트하세요.
+4. **검증 요청**: 수정 후 `/file` 또는 `/run`을 통해 결과 확인을 요청하세요.
 
 ## ⚠️ 주의사항
 
-1. **항상 dryRun으로 테스트**: 패치 적용 전에 `/patch-batch`에서 `dryRun: true`로 테스트
-2. **작은 단위로 작업**: 한 번에 너무 많은 파일을 수정하지 마세요
-3. **백업 생성**: 중요 작업 전 현재 상태 백업
-4. **테스트 실행**: 수정 후 `/run`으로 테스트 실행하여 검증
-5. **커밋 단위**: 논리적인 단위로 나누어서 작업
+1. **항상 dryRun으로 테스트**: 패치 적용 전에 반드시 테스트하세요.
+2. **작은 단위로 작업**: 한 번에 너무 많은 파일을 수정하지 마세요.
+3. **백업 생성**: 중요 작업 전 현재 상태를 확인하세요.
+4. **테스트 실행**: 수정 후 `/run`으로 테스트 실행하여 검증하세요.
+
+## ⚡ 빠른 시작 체크리스트
+
+- [ ] Local File Agent 서버 실행 (`npm run dev`)
+- [ ] 프로젝트 경로 확인 (`D:/home/8phone`)
+- [ ] 토큰 확인 (`73025532`)
+- [ ] 첫 번째 인덱싱 실행 (`POST /index`)
+- [ ] Cline과 첫 번째 대화 시작
 
 ## 🔗 API 참고
 
